@@ -104,7 +104,8 @@ export async function traceOperation<T>(
     return {
       result,
       traceData: {
-        traceId: trace.id || '',
+        // FIX: Access id via trace.data.id
+        traceId: trace.data.id || '',
         spanId: '',
         agentName: name,
         input,
@@ -236,7 +237,8 @@ export class CustomTrace {
   }
 
   getId(): string {
-    return this.trace.id || '';
+    // FIX: Access id via trace.data.id
+    return this.trace.data.id || '';
   }
 }
 

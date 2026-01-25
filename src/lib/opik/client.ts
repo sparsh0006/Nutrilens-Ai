@@ -47,7 +47,8 @@ export async function traceAgent<T>(
 
     return {
       result,
-      traceId: trace.id || '',
+      // FIX: Access id via trace.data.id
+      traceId: trace.data.id || '',
     };
   } catch (error) {
     const duration = Date.now() - startTime;
