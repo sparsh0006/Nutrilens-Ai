@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const feedback: UserFeedback = {
+    const _feedback: UserFeedback = {
       analysisId,
       correctedFoods,
       correctedPortions,
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Note: In production, you would also save to MongoDB here
-    // await saveFeedbackToDatabase(feedback);
+    // await saveFeedbackToDatabase(_feedback);
 
     return NextResponse.json({
       success: true,

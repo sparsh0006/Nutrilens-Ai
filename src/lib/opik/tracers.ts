@@ -3,14 +3,18 @@
 import { opikClient } from './client';
 import { OpikTraceData } from '../types';
 
+// Define types for Opik trace and span objects
+type OpikTrace = ReturnType<typeof opikClient.trace>;
+type OpikSpan = ReturnType<OpikTrace['span']>;
+
 /**
  * Create a new trace for tracking agent operations
  */
 export function createTrace(
   name: string,
-  input: any,
-  metadata?: Record<string, any>
-) {
+  input: Record<string, unknown>,
+  metadata?: Record<string, unknown>
+): OpikTrace {
   return opikClient.trace({
     name,
     input: { data: input },
@@ -25,11 +29,11 @@ export function createTrace(
  * Create a span within an existing trace
  */
 export function createSpan(
-  trace: any,
+  trace: OpikTrace,
   name: string,
   type: 'llm' | 'tool' | 'general',
-  input?: any
-) {
+  input?: Record<string, unknown>
+): OpikSpan {
   return trace.span({
     name,
     type,
@@ -41,10 +45,10 @@ export function createSpan(
  * Log a successful operation
  */
 export function logSuccess(
-  traceOrSpan: any,
-  output: any,
+  traceOrSpan: OpikTrace | OpikSpan,
+  output: unknown,
   duration: number,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ) {
   traceOrSpan.update({
     output: { data: output },
@@ -61,10 +65,10 @@ export function logSuccess(
  * Log a failed operation
  */
 export function logError(
-  traceOrSpan: any,
+  traceOrSpan: OpikTrace | OpikSpan,
   error: Error | unknown,
   duration: number,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ) {
   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
   const errorType = error instanceof Error ? error.constructor.name : 'Unknown';
@@ -86,9 +90,9 @@ export function logError(
  */
 export async function traceOperation<T>(
   name: string,
-  input: any,
+  input: Record<string, unknown>,
   operation: () => Promise<T>,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): Promise<{ result: T; traceData: OpikTraceData }> {
   const trace = createTrace(name, input, metadata);
   const startTime = Date.now();
@@ -125,16 +129,18 @@ export async function traceOperation<T>(
   }
 }
 
+interface SequenceOperation {
+  name: string;
+  fn: () => Promise<unknown>;
+  metadata?: Record<string, unknown>;
+}
+
 /**
  * Trace multiple operations in sequence
  */
 export async function traceSequence<T>(
   traceName: string,
-  operations: Array<{
-    name: string;
-    fn: () => Promise<any>;
-    metadata?: Record<string, any>;
-  }>
+  operations: SequenceOperation[]
 ): Promise<T[]> {
   const trace = createTrace(traceName, { operations: operations.length });
   const results: T[] = [];
@@ -149,7 +155,7 @@ export async function traceSequence<T>(
 
       logSuccess(span, result, duration, op.metadata);
       span.end();
-      results.push(result);
+      results.push(result as T);
     } catch (error) {
       const duration = Date.now() - startTime;
 
@@ -165,16 +171,18 @@ export async function traceSequence<T>(
   return results;
 }
 
+interface ParallelOperation {
+  name: string;
+  fn: () => Promise<unknown>;
+  metadata?: Record<string, unknown>;
+}
+
 /**
  * Trace parallel operations
  */
 export async function traceParallel<T>(
   traceName: string,
-  operations: Array<{
-    name: string;
-    fn: () => Promise<any>;
-    metadata?: Record<string, any>;
-  }>
+  operations: ParallelOperation[]
 ): Promise<T[]> {
   const trace = createTrace(traceName, { operations: operations.length });
 
@@ -188,7 +196,7 @@ export async function traceParallel<T>(
 
       logSuccess(span, result, duration, op.metadata);
       span.end();
-      return result;
+      return result as T;
     } catch (error) {
       const duration = Date.now() - startTime;
 
@@ -209,24 +217,24 @@ export async function traceParallel<T>(
  * Create a custom trace with manual control
  */
 export class CustomTrace {
-  private trace: any;
+  private trace: OpikTrace;
   private startTime: number;
 
-  constructor(name: string, input: any, metadata?: Record<string, any>) {
+  constructor(name: string, input: Record<string, unknown>, metadata?: Record<string, unknown>) {
     this.trace = createTrace(name, input, metadata);
     this.startTime = Date.now();
   }
 
-  createSpan(name: string, type: 'llm' | 'tool' | 'general', input?: any) {
+  createSpan(name: string, type: 'llm' | 'tool' | 'general', input?: Record<string, unknown>): OpikSpan {
     return createSpan(this.trace, name, type, input);
   }
 
-  logSuccess(output: any, metadata?: Record<string, any>) {
+  logSuccess(output: unknown, metadata?: Record<string, unknown>) {
     const duration = Date.now() - this.startTime;
     logSuccess(this.trace, output, duration, metadata);
   }
 
-  logError(error: Error | unknown, metadata?: Record<string, any>) {
+  logError(error: Error | unknown, metadata?: Record<string, unknown>) {
     const duration = Date.now() - this.startTime;
     logError(this.trace, error, duration, metadata);
   }
@@ -242,7 +250,7 @@ export class CustomTrace {
   }
 }
 
-export default {
+const tracerExports = {
   createTrace,
   createSpan,
   logSuccess,
@@ -252,3 +260,5 @@ export default {
   traceParallel,
   CustomTrace,
 };
+
+export default tracerExports;

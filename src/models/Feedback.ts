@@ -38,10 +38,36 @@ export interface FeedbackProps {
 }
 
 /* -------------------------------------------------------------------------- */
+/*                            Instance Methods Types                          */
+/* -------------------------------------------------------------------------- */
+
+interface FeedbackMethods {
+  markAsProcessed(): Promise<HydratedDocument<FeedbackProps, FeedbackMethods>>;
+  getSummary(): {
+    feedbackId: mongoose.Types.ObjectId;
+    analysisId: string;
+    type: FeedbackType;
+    score: number | undefined;
+    hasCorrections: boolean;
+    timestamp: Date;
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               Static Methods                               */
+/* -------------------------------------------------------------------------- */
+
+interface FeedbackModel extends Model<FeedbackProps, object, FeedbackMethods> {
+  findByAnalysisId(
+    analysisId: string
+  ): Promise<HydratedDocument<FeedbackProps, FeedbackMethods>[]>;
+}
+
+/* -------------------------------------------------------------------------- */
 /*                                   Schema                                   */
 /* -------------------------------------------------------------------------- */
 
-const FeedbackSchema = new Schema<FeedbackProps>(
+const FeedbackSchema = new Schema<FeedbackProps, FeedbackModel, FeedbackMethods>(
   {
     userId: { type: String, index: true },
 
@@ -118,40 +144,33 @@ FeedbackSchema.index({ satisfactionScore: 1 });
  * Mongoose v9 → use async middleware for `save`
  * No `next`, no options object
  */
-FeedbackSchema.pre(
-  'save',
-  async function (this: HydratedDocument<FeedbackProps>) {
-    if (!this.feedbackType || this.feedbackType === 'general') {
-      if (
-        (this.correctedFoods?.length ?? 0) > 0 ||
-        (this.correctedPortions?.length ?? 0) > 0
-      ) {
-        this.feedbackType = 'correction';
-      } else if (this.satisfactionScore) {
-        this.feedbackType = 'rating';
-      } else if (this.comments) {
-        this.feedbackType = 'comment';
-      }
+FeedbackSchema.pre('save', async function () {
+  if (!this.feedbackType || this.feedbackType === 'general') {
+    if (
+      (this.correctedFoods?.length ?? 0) > 0 ||
+      (this.correctedPortions?.length ?? 0) > 0
+    ) {
+      this.feedbackType = 'correction';
+    } else if (this.satisfactionScore) {
+      this.feedbackType = 'rating';
+    } else if (this.comments) {
+      this.feedbackType = 'comment';
     }
   }
-);
+});
 
 /* -------------------------------------------------------------------------- */
 /*                                  Virtuals                                  */
 /* -------------------------------------------------------------------------- */
 
-FeedbackSchema.virtual('hasCorrections').get(function (
-  this: HydratedDocument<FeedbackProps>
-) {
+FeedbackSchema.virtual('hasCorrections').get(function () {
   return (
     (this.correctedFoods?.length ?? 0) > 0 ||
     (this.correctedPortions?.length ?? 0) > 0
   );
 });
 
-FeedbackSchema.virtual('sentiment').get(function (
-  this: HydratedDocument<FeedbackProps>
-) {
+FeedbackSchema.virtual('sentiment').get(function () {
   if (!this.satisfactionScore) return 'neutral';
   if (this.satisfactionScore >= 4) return 'positive';
   if (this.satisfactionScore <= 2) return 'negative';
@@ -159,39 +178,29 @@ FeedbackSchema.virtual('sentiment').get(function (
 });
 
 /* -------------------------------------------------------------------------- */
-/*                              Instance Methods                               */
+/*                              Instance Methods                              */
 /* -------------------------------------------------------------------------- */
 
-FeedbackSchema.methods.markAsProcessed = async function (
-  this: HydratedDocument<FeedbackProps>
-) {
+FeedbackSchema.methods.markAsProcessed = async function () {
   this.processed = true;
   this.processedAt = new Date();
   return this.save();
 };
 
-FeedbackSchema.methods.getSummary = function (
-  this: HydratedDocument<FeedbackProps>
-) {
+FeedbackSchema.methods.getSummary = function () {
   return {
     feedbackId: this._id,
     analysisId: this.analysisId,
     type: this.feedbackType,
     score: this.satisfactionScore,
-    hasCorrections: this.get('hasCorrections'),
+    hasCorrections: this.get('hasCorrections') as boolean,
     timestamp: this.timestamp,
   };
 };
 
 /* -------------------------------------------------------------------------- */
-/*                               Static Methods                                */
+/*                               Static Methods                               */
 /* -------------------------------------------------------------------------- */
-
-interface FeedbackModel extends Model<FeedbackProps> {
-  findByAnalysisId(
-    analysisId: string
-  ): Promise<HydratedDocument<FeedbackProps>[]>;
-}
 
 FeedbackSchema.statics.findByAnalysisId = function (analysisId: string) {
   return this.find({ analysisId }).sort({ timestamp: -1 });
@@ -202,10 +211,7 @@ FeedbackSchema.statics.findByAnalysisId = function (analysisId: string) {
 /* -------------------------------------------------------------------------- */
 
 const Feedback =
-  mongoose.models.Feedback ??
-  mongoose.model<FeedbackProps, FeedbackModel>(
-    'Feedback',
-    FeedbackSchema
-  );
+  (mongoose.models.Feedback as FeedbackModel) ??
+  mongoose.model<FeedbackProps, FeedbackModel>('Feedback', FeedbackSchema);
 
 export default Feedback;

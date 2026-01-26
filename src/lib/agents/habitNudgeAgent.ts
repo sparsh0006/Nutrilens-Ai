@@ -42,7 +42,7 @@ Example format:
 
 export async function generateHabitNudges(
   foodItems: FoodItem[],
-  nutritionEstimates: NutritionEstimate[]
+  _nutritionEstimates: NutritionEstimate[]
 ): Promise<HabitNudge[]> {
   return traceAgent(
     'habit-nudge-agent',

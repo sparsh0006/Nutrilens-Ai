@@ -43,7 +43,7 @@ export function isValidBase64Image(str: string): boolean {
   // Check if it's valid base64
   try {
     return btoa(atob(base64)) === base64;
-  } catch (err) {
+  } catch {
     return false;
   }
 }
@@ -180,7 +180,7 @@ export function formatFileSize(bytes: number): string {
 /**
  * Debounce function
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
   func: T,
   waitMs: number
 ): (...args: Parameters<T>) => void {
@@ -202,7 +202,7 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * Throttle function
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: Parameters<T>) => ReturnType<T>>(
   func: T,
   limitMs: number
 ): (...args: Parameters<T>) => void {
@@ -227,7 +227,7 @@ export function deepClone<T>(obj: T): T {
 /**
  * Check if object is empty
  */
-export function isEmpty(obj: any): boolean {
+export function isEmpty(obj: unknown): boolean {
   if (obj == null) return true;
   if (Array.isArray(obj) || typeof obj === 'string') return obj.length === 0;
   if (typeof obj === 'object') return Object.keys(obj).length === 0;

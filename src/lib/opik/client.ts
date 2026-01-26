@@ -13,9 +13,9 @@ export const opikClient = new Opik({
 // Trace wrapper for agent functions
 export async function traceAgent<T>(
   name: string,
-  input: any,
+  input: Record<string, unknown>,
   fn: () => Promise<T>,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): Promise<{ result: T; traceId: string }> {
   const trace = opikClient.trace({
     name,
@@ -70,15 +70,19 @@ export async function traceAgent<T>(
   }
 }
 
+// Define types for Opik trace and span objects
+type OpikTrace = ReturnType<typeof opikClient.trace>;
+type OpikSpan = ReturnType<OpikTrace['span']>;
+
 // Span wrapper for sub-operations within agents
 export async function traceSpan<T>(
-  trace: any,
+  trace: OpikTrace,
   name: string,
   type: 'llm' | 'tool' | 'general',
-  input: any,
+  input: Record<string, unknown>,
   fn: () => Promise<T>
 ): Promise<T> {
-  const span = trace.span({
+  const span: OpikSpan = trace.span({
     name,
     type,
     input: { data: input },
@@ -121,7 +125,7 @@ export async function logFeedback(
   traceId: string,
   feedbackData: {
     score?: number;
-    corrections?: Record<string, any>;
+    corrections?: Record<string, unknown>;
     comments?: string;
   }
 ) {
@@ -148,9 +152,9 @@ export async function logFeedback(
 export async function batchTrace(
   operations: Array<{
     name: string;
-    input: any;
-    output: any;
-    metadata?: Record<string, any>;
+    input: Record<string, unknown>;
+    output: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
   }>
 ) {
   for (const op of operations) {

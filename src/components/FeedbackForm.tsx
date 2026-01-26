@@ -13,7 +13,7 @@ interface FeedbackFormProps {
 }
 
 export default function FeedbackForm({
-  analysisId,
+  // analysisId,
   foodItems,
   onSubmit,
   onCancel,

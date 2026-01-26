@@ -10,6 +10,13 @@ import { AnalysisResult } from '@/lib/types';
 import { Loader2, Info } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
+interface FeedbackData {
+  satisfactionScore?: number;
+  correctedFoods?: string[];
+  correctedPortions?: string[];
+  comments?: string;
+}
+
 export default function Home() {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -53,7 +60,7 @@ export default function Home() {
     }
   };
 
-  const handleFeedbackSubmit = async (feedbackData: any) => {
+  const handleFeedbackSubmit = async (feedbackData: FeedbackData) => {
     try {
       const response = await fetch('/api/feedback', {
         method: 'POST',
@@ -72,7 +79,7 @@ export default function Home() {
 
       toast.success('Thank you for your feedback!');
       setShowFeedback(false);
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to submit feedback');
     }
   };

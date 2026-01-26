@@ -76,9 +76,9 @@ export interface OpikTraceData {
   traceId: string;
   spanId: string;
   agentName: string;
-  input: any;
-  output: any;
-  metadata: Record<string, any>;
+  input: Record<string, unknown>;
+  output: unknown;
+  metadata: Record<string, unknown>;
   duration: number;
 }
 
