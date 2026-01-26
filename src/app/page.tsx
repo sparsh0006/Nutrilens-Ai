@@ -79,7 +79,7 @@ export default function Home() {
 
       toast.success('Thank you for your feedback!');
       setShowFeedback(false);
-    } catch (_error) {
+    } catch {
       toast.error('Failed to submit feedback');
     }
   };
