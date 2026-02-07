@@ -1,12 +1,9 @@
 // src/lib/agents/foodRecognitionAgent.ts
 
 import OpenAI from 'openai';
+import { trackOpenAI } from 'opik-openai';
 import { FoodItem } from '../types';
-import { traceAgent } from '../opik/client';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { opikClient } from '../opik/client';
 
 const SYSTEM_PROMPT = `You are an expert food recognition AI. Analyze meal images and identify all food items visible.
 
@@ -39,73 +36,121 @@ Example format:
 export async function recognizeFood(
   imageBase64: string
 ): Promise<FoodItem[]> {
-  return traceAgent(
-    'food-recognition-agent',
-    { imageProvided: true },
-    async () => {
-      try {
-        const response = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: SYSTEM_PROMPT,
-            },
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: 'Please analyze this meal image and identify all food items.',
-                },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: `data:image/jpeg;base64,${imageBase64}`,
-                    detail: 'high',
-                  },
-                },
-              ],
-            },
-          ],
-          temperature: 0.3,
-          max_tokens: 1000,
-        });
-
-        const content = response.choices[0].message.content || '[]';
-
-        // Extract JSON from response (handles markdown code blocks)
-        let jsonStr = content.trim();
-        if (jsonStr.startsWith('```json')) {
-          jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-        } else if (jsonStr.startsWith('```')) {
-          jsonStr = jsonStr.replace(/```\n?/g, '');
-        }
-
-        const foodItems: FoodItem[] = JSON.parse(jsonStr);
-
-        // Validate and sanitize
-        return foodItems.map((item) => ({
-          name: item.name || 'Unknown food',
-          confidence: Math.max(0, Math.min(1, item.confidence || 0)),
-          category: item.category || 'unknown',
-          portionSize: item.portionSize,
-          preparationMethod: item.preparationMethod,
-        }));
-      } catch (error) {
-        console.error('Food recognition error:', error);
-        throw new Error(
-          `Failed to recognize food: ${
-            error instanceof Error ? error.message : 'Unknown error'
-          }`
-        );
-      }
-    },
-    {
+  // Create a parent trace for this agent
+  const trace = opikClient.trace({
+    name: 'food-recognition-agent',
+    input: { data: { imageProvided: true } },
+    metadata: {
       model: 'gpt-4o',
       agentType: 'vision',
+      timestamp: new Date().toISOString(),
+      agent: 'food-recognition-agent',
+    },
+  });
+
+  const startTime = Date.now();
+
+  try {
+    // Create a tracked OpenAI client with this trace as parent
+    // This ensures the LLM call appears as a child span under the trace
+    const openai = trackOpenAI(
+      new OpenAI({ apiKey: process.env.OPENAI_API_KEY }),
+      {
+        client: opikClient,
+        parent: trace,
+        generationName: 'food-recognition-llm-call',
+      }
+    );
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: SYSTEM_PROMPT,
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Please analyze this meal image and identify all food items.',
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`,
+                detail: 'high',
+              },
+            },
+          ],
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 1000,
+    });
+
+    const content = response.choices[0].message.content || '[]';
+
+    // Extract JSON from response (handles markdown code blocks)
+    let jsonStr = content.trim();
+    if (jsonStr.startsWith('```json')) {
+      jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    } else if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/```\n?/g, '');
     }
-  ).then((res) => res.result);
+
+    const foodItems: FoodItem[] = JSON.parse(jsonStr);
+
+    // Validate and sanitize
+    const result = foodItems.map((item) => ({
+      name: item.name || 'Unknown food',
+      confidence: Math.max(0, Math.min(1, item.confidence || 0)),
+      category: item.category || 'unknown',
+      portionSize: item.portionSize,
+      preparationMethod: item.preparationMethod,
+    }));
+
+    const duration = Date.now() - startTime;
+
+    // Update and end the trace
+    trace.update({
+      output: { data: result },
+      metadata: {
+        model: 'gpt-4o',
+        agentType: 'vision',
+        duration,
+        status: 'success',
+        foodCount: result.length,
+      },
+    });
+    trace.end();
+    await opikClient.flush();
+
+    return result;
+  } catch (error) {
+    const duration = Date.now() - startTime;
+
+    trace.update({
+      output: { error: error instanceof Error ? error.message : 'Unknown error' },
+      metadata: {
+        model: 'gpt-4o',
+        agentType: 'vision',
+        duration,
+        status: 'error',
+        errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+      },
+    });
+    trace.end();
+    await opikClient.flush();
+
+    console.error('Food recognition error:', error);
+    throw new Error(
+      `Failed to recognize food: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
 }
 
 // Enhanced recognition with confidence thresholds

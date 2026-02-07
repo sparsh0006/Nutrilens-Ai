@@ -1,11 +1,22 @@
 // src/lib/opik/evaluators.ts
 
 import OpenAI from 'openai';
+import { trackOpenAI } from 'opik-openai';
 import { EvaluationMetrics } from '../types';
+import { opikClient } from './client';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Create a tracked OpenAI client for evaluator calls
+function getTrackedOpenAI(parentTrace?: ReturnType<typeof opikClient.trace>) {
+  const baseOpenAI = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
+  return trackOpenAI(baseOpenAI, {
+    client: opikClient,
+    ...(parentTrace ? { parent: parentTrace } : {}),
+    generationName: 'evaluation-llm-call',
+  });
+}
 
 // LLM-as-Judge for Hallucination Detection
 export async function evaluateHallucination(
@@ -27,6 +38,8 @@ Rate the response for hallucinations on a scale of 0-1:
 Provide your score as a single number between 0 and 1.`;
 
   try {
+    const openai = getTrackedOpenAI();
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
@@ -57,6 +70,8 @@ Rate the clarity on a scale of 0-1:
 Provide your score as a single number between 0 and 1.`;
 
   try {
+    const openai = getTrackedOpenAI();
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
@@ -87,6 +102,8 @@ Rate the tone safety on a scale of 0-1:
 Provide your score as a single number between 0 and 1.`;
 
   try {
+    const openai = getTrackedOpenAI();
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],

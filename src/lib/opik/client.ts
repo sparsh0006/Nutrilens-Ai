@@ -11,6 +11,7 @@ export const opikClient = new Opik({
 });
 
 // Trace wrapper for agent functions
+// Creates a parent trace AND a child span for the agent operation
 export async function traceAgent<T>(
   name: string,
   input: Record<string, unknown>,
@@ -27,12 +28,35 @@ export async function traceAgent<T>(
     },
   });
 
+  // Create a child span within the trace for the actual agent work
+  const span = trace.span({
+    name: `${name}-execution`,
+    type: 'general',
+    input: { data: input },
+    metadata: {
+      ...metadata,
+      agent: name,
+    },
+  });
+
   const startTime = Date.now();
 
   try {
     const result = await fn();
     const duration = Date.now() - startTime;
 
+    // Update and end the span
+    span.update({
+      output: { data: result },
+      metadata: {
+        ...metadata,
+        duration,
+        status: 'success',
+      },
+    });
+    span.end();
+
+    // Update and end the trace
     trace.update({
       output: { data: result },
       metadata: {
@@ -47,12 +71,24 @@ export async function traceAgent<T>(
 
     return {
       result,
-      // FIX: Access id via trace.data.id
       traceId: trace.data.id || '',
     };
   } catch (error) {
     const duration = Date.now() - startTime;
 
+    // Update and end the span with error
+    span.update({
+      output: { error: error instanceof Error ? error.message : 'Unknown error' },
+      metadata: {
+        ...metadata,
+        duration,
+        status: 'error',
+        errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+      },
+    });
+    span.end();
+
+    // Update and end the trace with error
     trace.update({
       output: { error: error instanceof Error ? error.message : 'Unknown error' },
       metadata: {
@@ -130,7 +166,7 @@ export async function logFeedback(
   }
 ) {
   try {
-    // Create a feedback trace
+    // Create a feedback trace with a span
     const feedbackTrace = opikClient.trace({
       name: 'user-feedback',
       input: { traceId, ...feedbackData },
@@ -141,6 +177,24 @@ export async function logFeedback(
       },
     });
 
+    const feedbackSpan = feedbackTrace.span({
+      name: 'feedback-recording',
+      type: 'general',
+      input: { traceId, ...feedbackData },
+      metadata: {
+        type: 'feedback',
+        originalTraceId: traceId,
+      },
+    });
+
+    feedbackSpan.update({
+      output: { recorded: true, score: feedbackData.score },
+    });
+    feedbackSpan.end();
+
+    feedbackTrace.update({
+      output: { recorded: true, score: feedbackData.score },
+    });
     feedbackTrace.end();
     await opikClient.flush();
   } catch (error) {
@@ -167,6 +221,17 @@ export async function batchTrace(
         timestamp: new Date().toISOString(),
       },
     });
+
+    // Create a span within each batch trace
+    const span = trace.span({
+      name: `${op.name}-span`,
+      type: 'general',
+      input: op.input,
+      metadata: op.metadata,
+    });
+
+    span.update({ output: op.output });
+    span.end();
 
     trace.end();
   }

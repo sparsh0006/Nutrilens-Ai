@@ -1,12 +1,9 @@
 // src/lib/agents/nutritionEstimationAgent.ts
 
 import OpenAI from 'openai';
+import { trackOpenAI } from 'opik-openai';
 import { FoodItem, NutritionEstimate } from '../types';
-import { traceAgent } from '../opik/client';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { opikClient } from '../opik/client';
 
 const SYSTEM_PROMPT = `You are an expert nutritionist providing nutrition range estimates for food items.
 
@@ -67,82 +64,128 @@ Example format:
 export async function estimateNutrition(
   foodItems: FoodItem[]
 ): Promise<NutritionEstimate[]> {
-  return traceAgent(
-    'nutrition-estimation-agent',
-    { foodItems: foodItems.map((f) => f.name) },
-    async () => {
-      try {
-        const response = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: SYSTEM_PROMPT,
-            },
-            {
-              role: 'user',
-              content: `Provide nutrition estimates for these food items:\n\n${JSON.stringify(
-                foodItems,
-                null,
-                2
-              )}`,
-            },
-          ],
-          temperature: 0.4,
-          max_tokens: 2000,
-        });
-
-        const content = response.choices[0].message.content || '[]';
-
-        // Extract JSON
-        let jsonStr = content.trim();
-        if (jsonStr.startsWith('```json')) {
-          jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-        } else if (jsonStr.startsWith('```')) {
-          jsonStr = jsonStr.replace(/```\n?/g, '');
-        }
-
-        const estimates: NutritionEstimate[] = JSON.parse(jsonStr);
-
-        // Validate ranges
-        return estimates.map((est) => ({
-          ...est,
-          calories: {
-            min: Math.max(0, est.calories.min),
-            max: Math.max(est.calories.min, est.calories.max),
-            confidence: Math.max(0, Math.min(1, est.calories.confidence)),
-          },
-          protein: {
-            min: Math.max(0, est.protein.min),
-            max: Math.max(est.protein.min, est.protein.max),
-            unit: est.protein.unit || 'g',
-          },
-          carbs: {
-            min: Math.max(0, est.carbs.min),
-            max: Math.max(est.carbs.min, est.carbs.max),
-            unit: est.carbs.unit || 'g',
-          },
-          fat: {
-            min: Math.max(0, est.fat.min),
-            max: Math.max(est.fat.min, est.fat.max),
-            unit: est.fat.unit || 'g',
-          },
-          variabilityFactors: est.variabilityFactors || [],
-        }));
-      } catch (error) {
-        console.error('Nutrition estimation error:', error);
-        throw new Error(
-          `Failed to estimate nutrition: ${
-            error instanceof Error ? error.message : 'Unknown error'
-          }`
-        );
-      }
-    },
-    {
+  // Create a parent trace for this agent
+  const trace = opikClient.trace({
+    name: 'nutrition-estimation-agent',
+    input: { data: { foodItems: foodItems.map((f) => f.name) } },
+    metadata: {
       model: 'gpt-4o-mini',
       agentType: 'analysis',
+      timestamp: new Date().toISOString(),
+      agent: 'nutrition-estimation-agent',
+    },
+  });
+
+  const startTime = Date.now();
+
+  try {
+    // Create a tracked OpenAI client with this trace as parent
+    const openai = trackOpenAI(
+      new OpenAI({ apiKey: process.env.OPENAI_API_KEY }),
+      {
+        client: opikClient,
+        parent: trace,
+        generationName: 'nutrition-estimation-llm-call',
+      }
+    );
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: SYSTEM_PROMPT,
+        },
+        {
+          role: 'user',
+          content: `Provide nutrition estimates for these food items:\n\n${JSON.stringify(
+            foodItems,
+            null,
+            2
+          )}`,
+        },
+      ],
+      temperature: 0.4,
+      max_tokens: 2000,
+    });
+
+    const content = response.choices[0].message.content || '[]';
+
+    // Extract JSON
+    let jsonStr = content.trim();
+    if (jsonStr.startsWith('```json')) {
+      jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    } else if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/```\n?/g, '');
     }
-  ).then((res) => res.result);
+
+    const estimates: NutritionEstimate[] = JSON.parse(jsonStr);
+
+    // Validate ranges
+    const result = estimates.map((est) => ({
+      ...est,
+      calories: {
+        min: Math.max(0, est.calories.min),
+        max: Math.max(est.calories.min, est.calories.max),
+        confidence: Math.max(0, Math.min(1, est.calories.confidence)),
+      },
+      protein: {
+        min: Math.max(0, est.protein.min),
+        max: Math.max(est.protein.min, est.protein.max),
+        unit: est.protein.unit || 'g',
+      },
+      carbs: {
+        min: Math.max(0, est.carbs.min),
+        max: Math.max(est.carbs.min, est.carbs.max),
+        unit: est.carbs.unit || 'g',
+      },
+      fat: {
+        min: Math.max(0, est.fat.min),
+        max: Math.max(est.fat.min, est.fat.max),
+        unit: est.fat.unit || 'g',
+      },
+      variabilityFactors: est.variabilityFactors || [],
+    }));
+
+    const duration = Date.now() - startTime;
+
+    trace.update({
+      output: { data: result },
+      metadata: {
+        model: 'gpt-4o-mini',
+        agentType: 'analysis',
+        duration,
+        status: 'success',
+        estimateCount: result.length,
+      },
+    });
+    trace.end();
+    await opikClient.flush();
+
+    return result;
+  } catch (error) {
+    const duration = Date.now() - startTime;
+
+    trace.update({
+      output: { error: error instanceof Error ? error.message : 'Unknown error' },
+      metadata: {
+        model: 'gpt-4o-mini',
+        agentType: 'analysis',
+        duration,
+        status: 'error',
+        errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+      },
+    });
+    trace.end();
+    await opikClient.flush();
+
+    console.error('Nutrition estimation error:', error);
+    throw new Error(
+      `Failed to estimate nutrition: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`
+    );
+  }
 }
 
 // Calculate total nutrition with uncertainty

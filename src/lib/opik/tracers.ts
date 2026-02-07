@@ -86,7 +86,7 @@ export function logError(
 }
 
 /**
- * Trace a complete async operation
+ * Trace a complete async operation with proper span creation
  */
 export async function traceOperation<T>(
   name: string,
@@ -95,11 +95,16 @@ export async function traceOperation<T>(
   metadata?: Record<string, unknown>
 ): Promise<{ result: T; traceData: OpikTraceData }> {
   const trace = createTrace(name, input, metadata);
+  // Always create a child span for the operation
+  const span = createSpan(trace, `${name}-execution`, 'general', input);
   const startTime = Date.now();
 
   try {
     const result = await operation();
     const duration = Date.now() - startTime;
+
+    logSuccess(span, result, duration, metadata);
+    span.end();
 
     logSuccess(trace, result, duration, metadata);
     trace.end();
@@ -108,7 +113,6 @@ export async function traceOperation<T>(
     return {
       result,
       traceData: {
-        // FIX: Access id via trace.data.id
         traceId: trace.data.id || '',
         spanId: '',
         agentName: name,
@@ -120,6 +124,9 @@ export async function traceOperation<T>(
     };
   } catch (error) {
     const duration = Date.now() - startTime;
+
+    logError(span, error, duration, metadata);
+    span.end();
 
     logError(trace, error, duration, metadata);
     trace.end();
@@ -245,8 +252,12 @@ export class CustomTrace {
   }
 
   getId(): string {
-    // FIX: Access id via trace.data.id
     return this.trace.data.id || '';
+  }
+
+  // Expose the underlying trace for use as a parent in trackOpenAI
+  getTrace(): OpikTrace {
+    return this.trace;
   }
 }
 
