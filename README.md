@@ -1,31 +1,48 @@
 # 🍎 NutriLens AI
 
-**Visual Nutrition Awareness Agent with AI-Powered Multi-Agent Pipeline**
+**Visual Nutrition Awareness Agent — Honest, Uncertainty-Aware, Evaluation-Driven**
 
-NutriLens AI is an evaluation-first, uncertainty-aware nutrition analysis platform that helps users develop healthier eating awareness through computer vision and multi-agent AI processing. Built with Opik for comprehensive tracing, evaluation, and continuous improvement.
+> Upload a meal photo. Get nutrition ranges, not false precision. Build awareness, not obsession.
 
-## 🎯 Overview
+NutriLens AI helps users develop healthier eating awareness through computer vision and a multi-agent AI pipeline. It provides **range-based nutrition estimates**, **confidence scores**, and **reflective prompts** — never exact calorie counts or prescriptive dietary advice.
 
-NutriLens AI analyzes meal images using a sophisticated multi-agent pipeline:
+Every AI decision is traced, evaluated, and improvable through **Opik by Comet**.
 
-1. **Food Recognition Agent** - Identifies food items with confidence scores
-2. **Nutrition Estimation Agent** - Provides range-based nutrition estimates
-3. **Reflection Agent** - Generates thoughtful prompts for self-awareness
-4. **Habit Nudge Agent** - Offers supportive, non-prescriptive suggestions
+🔗 **[Live Demo](https://nutrilens-ai-brown.vercel.app/)** · 📊 **[Opik Workspace: among-gaming](https://www.comet.com/opik)** · 🏥 **Health, Fitness & Wellness Track** · 🏆 **Best Use of Opik**
 
-All agents are traced, evaluated, and continuously improved using **Opik by Comet**.
+---
 
-## ✨ Key Features
+## 🎯 Why NutriLens AI?
 
-- 📸 **Image-Based Analysis** - Upload meal photos for instant recognition
-- 📊 **Range Estimates** - Nutrition ranges (not exact values) to reflect uncertainty
-- 🤔 **Reflection Prompts** - Questions that encourage healthy awareness
-- 💡 **Habit Nudges** - Supportive suggestions without prescriptive advice
-- 🔍 **Opik Integration** - Full tracing and LLM-as-judge evaluations
-- 📈 **Continuous Improvement** - User feedback improves future predictions
-- 🎨 **Modern UI** - Clean, responsive interface with Tailwind CSS
+Most nutrition apps give you a single number — "this meal is 487 calories" — creating **false precision**. A grilled chicken breast could be 165–220 kcal depending on portion size, cooking method, and whether the skin is on.
 
-## 🏗️ Architecture
+NutriLens AI takes a different approach:
+
+| Traditional Apps | NutriLens AI |
+|---|---|
+| Exact calorie counts | Range estimates (165–220 kcal) |
+| Black-box results | Confidence scores + variability factors |
+| "Eat this, not that" | Reflective questions for self-discovery |
+| No transparency | Every AI decision traced in Opik |
+
+**The goal isn't calorie counting — it's building awareness.**
+
+---
+
+## 🏥 Health, Fitness & Wellness
+
+NutriLens AI is designed for the **Health, Fitness & Wellness** track with responsible AI at its core:
+
+- **Range Estimates, Not Exact Values** — Reflects real-world uncertainty in nutrition (portion size, preparation method, ingredient variations)
+- **Non-Prescriptive Tone** — Never tells users what to eat or avoid; focuses on awareness and self-discovery
+- **Reflective Prompts** — Encourages mindful eating through open-ended questions across awareness, goals, habits, and alternatives
+- **Supportive Habit Nudges** — Celebrates positive choices and gently suggests variety without judgment
+- **Safety Disclaimers** — Clearly states this is for educational purposes only, not medical or dietary advice
+- **Tone Safety Monitoring** — An LLM-as-judge evaluator actively checks every response for prescriptive language
+
+---
+
+## 🏗️ Multi-Agent Architecture
 
 ```
 ┌─────────────────┐
@@ -34,96 +51,169 @@ All agents are traced, evaluated, and continuously improved using **Opik by Come
 └────────┬────────┘
          │
          ▼
-┌─────────────────────────────────────────┐
-│        Food Recognition Agent           │
-│  (GPT-4 Vision) → Opik Tracing         │
-└────────┬────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│  🔍 Food Recognition Agent (GPT-4o Vision) │
+│  Identifies foods + confidence scores       │
+│  → Opik Trace: food-recognition-llm-call    │
+└────────┬────────────────────────────────────┘
          │
          ▼
-┌─────────────────────────────────────────┐
-│     Nutrition Estimation Agent          │
-│  (GPT-4o-mini) → Opik Tracing          │
-└────────┬────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│  📊 Nutrition Estimation Agent (GPT-4o-mini)│
+│  Range-based estimates + variability factors│
+│  → Opik Trace: nutrition-estimation-llm-call│
+└────────┬────────────────────────────────────┘
          │
-         ├─────────────────────────────────┐
-         │                                  │
-         ▼                                  ▼
-┌──────────────────┐            ┌──────────────────┐
-│ Reflection Agent │            │ Habit Nudge Agent│
-│  → Opik Tracing  │            │  → Opik Tracing  │
-└────────┬─────────┘            └─────────┬────────┘
-         │                                  │
-         └──────────────┬───────────────────┘
-                        │
-                        ▼
-         ┌──────────────────────────┐
-         │  LLM-as-Judge Evaluation │
-         │  (Hallucination, Clarity,│
-         │   Tone Safety)           │
-         └──────────┬───────────────┘
-                    │
-                    ▼
-         ┌──────────────────────────┐
-         │  Results + Feedback Loop │
-         │  → Opik Logging          │
-         └──────────────────────────┘
+         ├────────────────────────┐
+         ▼                        ▼
+┌────────────────────┐  ┌────────────────────┐
+│ 🤔 Reflection Agent│  │ 💡 Habit Nudge Agent│
+│ Awareness questions│  │ Supportive nudges  │
+│ → Opik Traced      │  │ → Opik Traced      │
+└────────┬───────────┘  └─────────┬──────────┘
+         │                        │
+         └───────────┬────────────┘
+                     ▼
+      ┌──────────────────────────────┐
+      │  ⚖️ LLM-as-Judge Evaluation  │
+      │  Hallucination · Clarity ·   │
+      │  Tone Safety                 │
+      │  → 3 Opik Evaluation Traces  │
+      └──────────┬───────────────────┘
+                 ▼
+      ┌──────────────────────────────┐
+      │  📝 User Feedback Loop       │
+      │  Corrections → Opik Logging  │
+      └──────────────────────────────┘
 ```
+
+### Agent Details
+
+| Agent | Model | Purpose | Key Output |
+|---|---|---|---|
+| Food Recognition | GPT-4o Vision | Identify foods from images | Food items + confidence (0–1) + category |
+| Nutrition Estimation | GPT-4o-mini | Estimate nutrition ranges | Calorie/protein/carb/fat ranges + variability factors |
+| Reflection | GPT-4o-mini | Generate awareness prompts | 3–5 questions across awareness, goals, habits, alternatives |
+| Habit Nudge | GPT-4o-mini | Supportive suggestions | 2–3 positive/neutral/suggestion nudges |
+
+---
+
+## 🔍 Best Use of Opik — Evaluation & Observability
+
+Opik is not an add-on — it's central to how NutriLens AI is built, tested, and improved.
+
+### Full Agent Tracing with `opik-openai`
+
+Every agent creates a parent trace with `opikClient.trace()`, then uses `trackOpenAI()` from `opik-openai` with `parent: trace` to automatically capture:
+
+- **Model name, prompts, and completions** as child spans
+- **Token usage and cost** per LLM call
+- **Latency** for each agent
+- **Errors** with full stack context
+
+```typescript
+// Each agent creates a traced OpenAI client
+const trace = opikClient.trace({ name: 'food-recognition-agent', ... });
+const openai = trackOpenAI(new OpenAI({ apiKey }), {
+  client: opikClient,
+  parent: trace,  // LLM call appears as child span
+  generationName: 'food-recognition-llm-call',
+});
+```
+
+### 3 LLM-as-Judge Evaluations
+
+Every analysis is automatically evaluated (async, non-blocking) on three dimensions:
+
+| Metric | What It Measures | Why It Matters |
+|---|---|---|
+| **Hallucination Score** | Are nutrition claims factually grounded? | Prevents false health information |
+| **Clarity Score** | Is the output well-structured and understandable? | Users need clear, actionable information |
+| **Tone Safety Score** | Does it avoid prescriptive dietary advice? | Critical for the Health track — safety first |
+
+```
+Evaluation metrics: {
+  hallucinationScore: 1,
+  clarityScore: 1,
+  toneScore: 1,
+  confidenceCalibration: 0.5,
+  overallQuality: 1
+}
+```
+
+### User Feedback Loop
+
+User corrections (food identification, portion sizes, satisfaction ratings) are logged as separate Opik traces linked to the original analysis via `analysisId`, creating a closed loop for continuous improvement.
+
+### Opik Dashboard Visibility
+
+All traces are visible at:
+- **Workspace:** `among-gaming`
+- **Project:** `nutrilens-ai`
+- **Traces include:** food-recognition-agent, nutrition-estimation-agent, reflection-agent, habit-nudge-agent, evaluation-llm-call (×3), user-feedback
+
+---
+
+## ✨ Key Features
+
+- 📸 **Image-Based Analysis** — Upload meal photos for instant multi-agent analysis
+- 📊 **Range Estimates** — Nutrition ranges (not exact values) reflecting real uncertainty
+- 🤔 **Reflection Prompts** — Open-ended questions encouraging healthy self-awareness
+- 💡 **Habit Nudges** — Supportive, non-prescriptive suggestions celebrating positive choices
+- 🔍 **Full Opik Tracing** — Every agent call traced with spans via `opik-openai` integration
+- ⚖️ **LLM-as-Judge** — 3 automated evaluation metrics on every analysis
+- 📝 **Feedback Loop** — User corrections logged to Opik for continuous improvement
+- 🎨 **Modern UI** — Clean, responsive Next.js interface with Tailwind CSS
+
+---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 18+
 - OpenAI API Key
-- Opik API Key (sign up at [comet.com/opik](https://www.comet.com/opik))
-- MongoDB (optional, for data persistence)
+- Opik API Key ([comet.com/opik](https://www.comet.com/opik))
+- MongoDB (optional)
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/sparsh0006/Nutrilens-Ai.git
 cd nutrilens-ai
-
-# Install dependencies
 npm install
-
-# Copy environment variables
 cp .env.example .env.local
-
-# Edit .env.local with your API keys
 ```
 
-### Environment Setup
-
-Create `.env.local` with the following:
+### Environment Variables
 
 ```env
-# Opik Configuration
-OPIK_API_KEY=your_opik_api_key_here
+# Opik
+OPIK_API_KEY=your_opik_api_key
 OPIK_URL_OVERRIDE=https://www.comet.com/opik/api
 OPIK_PROJECT_NAME=nutrilens-ai
-OPIK_WORKSPACE_NAME=your_workspace_name
+OPIK_WORKSPACE_NAME=your_workspace
 
-# OpenAI Configuration
-OPENAI_API_KEY=your_openai_api_key_here
+# OpenAI
+OPENAI_API_KEY=your_openai_api_key
 
-# MongoDB (Optional)
+# MongoDB (optional)
 MONGODB_URI=mongodb://localhost:27017/nutrilens
-MONGODB_DB_NAME=nutrilens
 
-# App Configuration
+# App
 NEXT_PUBLIC_API_URL=http://localhost:3000
 NODE_ENV=development
 ```
 
-### Run Development Server
+### Run
 
 ```bash
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) to use the application.
+Open [http://localhost:3000](http://localhost:3000)
+
+---
 
 ## 📦 Project Structure
 
@@ -132,118 +222,66 @@ nutrilens-ai/
 ├── src/
 │   ├── app/
 │   │   ├── api/
-│   │   │   ├── analyze/route.ts      # Main analysis endpoint
-│   │   │   ├── feedback/route.ts     # Feedback collection
-│   │   │   └── health/route.ts       # Health check
-│   │   ├── layout.tsx                # Root layout
-│   │   ├── page.tsx                  # Main page
-│   │   └── globals.css               # Global styles
+│   │   │   ├── analyze/route.ts          # Multi-agent pipeline endpoint
+│   │   │   ├── feedback/route.ts         # Feedback collection → Opik
+│   │   │   └── health/route.ts           # Health check
+│   │   ├── page.tsx                      # Main UI
+│   │   └── layout.tsx
 │   ├── components/
-│   │   ├── ImageUpload.tsx           # Image upload component
-│   │   ├── NutritionResults.tsx      # Results display
-│   │   ├── ReflectionPrompts.tsx     # Reflection UI
-│   │   └── FeedbackForm.tsx          # Feedback form
+│   │   ├── ImageUpload.tsx               # Drag-and-drop image upload
+│   │   ├── NutritionResults.tsx          # Range-based results display
+│   │   ├── ReflectionPrompts.tsx         # Reflection questions UI
+│   │   └── FeedbackForm.tsx              # User feedback form
 │   ├── lib/
 │   │   ├── agents/
-│   │   │   ├── foodRecognitionAgent.ts
-│   │   │   ├── nutritionEstimationAgent.ts
-│   │   │   ├── reflectionAgent.ts
-│   │   │   └── habitNudgeAgent.ts
+│   │   │   ├── foodRecognitionAgent.ts   # GPT-4o Vision + Opik trace
+│   │   │   ├── nutritionEstimationAgent.ts # Range estimates + Opik trace
+│   │   │   ├── reflectionAgent.ts        # Awareness prompts + Opik trace
+│   │   │   └── habitNudgeAgent.ts        # Supportive nudges + Opik trace
 │   │   ├── opik/
-│   │   │   ├── client.ts             # Opik client setup
-│   │   │   ├── evaluators.ts         # LLM-as-judge metrics
-│   │   │   └── tracers.ts            # Tracing utilities
-│   │   ├── types.ts                  # TypeScript types
-│   │   └── utils.ts                  # Utility functions
-│   └── models/                       # MongoDB models (optional)
-├── public/                           # Static assets
-├── .env.local                        # Environment variables
-├── next.config.js                    # Next.js config
-├── tailwind.config.js                # Tailwind config
-├── tsconfig.json                     # TypeScript config
-└── package.json                      # Dependencies
+│   │   │   ├── client.ts                # Opik client + traceAgent wrapper
+│   │   │   ├── evaluators.ts            # 3 LLM-as-judge metrics
+│   │   │   └── tracers.ts              # Tracing utilities
+│   │   ├── types.ts
+│   │   └── utils.ts
+│   └── models/
+│       ├── Meal.ts                       # MongoDB meal schema
+│       └── Feedback.ts                   # MongoDB feedback schema
+└── package.json
 ```
-
-## 🧪 Evaluation & Testing
-
-### LLM-as-Judge Metrics
-
-NutriLens AI uses Opik's evaluation framework with custom metrics:
-
-1. **Hallucination Detection** - Ensures factual accuracy
-2. **Clarity Score** - Measures explanation quality
-3. **Tone Safety** - Prevents prescriptive dietary advice
-4. **Confidence Calibration** - Validates prediction confidence
-
-### Running Evaluations
-
-```typescript
-import { evaluateAnalysis } from '@/lib/opik/evaluators';
-
-const metrics = await evaluateAnalysis(input, output, context);
-console.log(metrics);
-// {
-//   hallucinationScore: 0.92,
-//   clarityScore: 0.88,
-//   toneScore: 0.95,
-//   overallQuality: 0.92
-// }
-```
-
-### Regression Testing
-
-```bash
-npm run test:regression
-```
-
-## 🔐 Safety & Ethics
-
-NutriLens AI is built with responsible AI principles:
-
-- ✅ **No Medical Claims** - Explicitly avoids medical/dietary advice
-- ✅ **Range Estimates** - Provides ranges instead of exact values
-- ✅ **Confidence Scores** - Transparent about uncertainty
-- ✅ **Non-Prescriptive** - Focuses on awareness, not prescription
-- ✅ **User Empowerment** - Supports autonomy and choice
-- ✅ **Feedback Loop** - Learns from user corrections
-
-## 📊 Opik Dashboard
-
-View your traces and evaluations in the Opik dashboard:
-
-1. Visit [comet.com/opik](https://www.comet.com/opik)
-2. Navigate to your workspace
-3. Select the `nutrilens-ai` project
-4. View traces, spans, and evaluation metrics
-
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📝 License
-
-MIT License - see LICENSE file for details
-
-## 🙏 Acknowledgments
-
-- **Opik by Comet** - LLM observability and evaluation platform
-- **OpenAI** - GPT-4 Vision and language models
-- **Next.js** - React framework
-- **Tailwind CSS** - Styling framework
-
-## 📧 Support
-
-For questions or issues:
-- Open an issue on GitHub
-- Visit [Opik Documentation](https://www.comet.com/docs/opik/)
-- Join the [Opik Slack Community](https://www.comet.com/slack)
 
 ---
 
-Built with ❤️ for the Health, Fitness & Wellness track
+## 🔐 Safety & Responsible AI
+
+| Principle | Implementation |
+|---|---|
+| No Medical Claims | Disclaimers in UI header and footer; agents instructed to avoid medical advice |
+| Range Estimates | All nutrition values shown as min–max ranges, never single numbers |
+| Confidence Scores | Every food item shows identification confidence (0–100%) |
+| Non-Prescriptive | Reflection agent uses open-ended questions; nudge agent never commands |
+| Tone Monitoring | LLM-as-judge tone safety evaluator runs on every analysis |
+| User Autonomy | Feedback system empowers users to correct and improve results |
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework:** Next.js 14 + TypeScript
+- **AI Models:** OpenAI GPT-4o (vision), GPT-4o-mini (text)
+- **Observability:** Opik SDK + opik-openai integration
+- **Database:** MongoDB + Mongoose (optional)
+- **Styling:** Tailwind CSS
+- **Deployment:** Vercel
+
+---
+
+## 📧 Links
+
+- **Live Demo:** [nutrilens-ai-brown.vercel.app](https://nutrilens-ai-brown.vercel.app/)
+- **GitHub:** [github.com/sparsh0006/Nutrilens-Ai](https://github.com/sparsh0006/Nutrilens-Ai)
+- **Opik Docs:** [comet.com/docs/opik](https://www.comet.com/docs/opik/)
+
+---
+
+Built with ❤️ for the **Health, Fitness & Wellness** track + **Best Use of Opik**
