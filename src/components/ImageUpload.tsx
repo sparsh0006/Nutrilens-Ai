@@ -1,4 +1,3 @@
-// src/components/ImageUpload.tsx
 'use client';
 
 import { useCallback, useState } from 'react';

@@ -1,5 +1,3 @@
-// src/lib/opik/tracers.ts
-
 import { opikClient } from './client';
 import { OpikTraceData } from '../types';
 

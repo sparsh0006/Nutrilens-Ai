@@ -1,5 +1,3 @@
-// src/lib/agents/reflectionAgent.ts
-
 import OpenAI from 'openai';
 import { trackOpenAI } from 'opik-openai';
 import { FoodItem, NutritionEstimate, ReflectionPrompt } from '../types';

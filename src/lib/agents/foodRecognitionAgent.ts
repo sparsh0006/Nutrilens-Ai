@@ -1,5 +1,3 @@
-// src/lib/agents/foodRecognitionAgent.ts
-
 import OpenAI from 'openai';
 import { trackOpenAI } from 'opik-openai';
 import { FoodItem } from '../types';

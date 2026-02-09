@@ -1,5 +1,3 @@
-// src/lib/types.ts
-
 export interface FoodItem {
   name: string;
   confidence: number;

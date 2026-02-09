@@ -1,4 +1,3 @@
-// src/components/NutritionResults.tsx
 'use client';
 
 import { AnalysisResult, NutritionEstimate } from '@/lib/types';

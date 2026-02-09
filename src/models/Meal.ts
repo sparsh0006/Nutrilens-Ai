@@ -1,5 +1,3 @@
-// src/models/Meal.ts
-
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 // Interface for FoodItem subdocument

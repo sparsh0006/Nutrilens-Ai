@@ -1,5 +1,3 @@
-// src/app/api/analyze/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import { recognizeFoodWithValidation } from '@/lib/agents/foodRecognitionAgent';
 import { estimateNutrition, calculateTotalNutrition } from '@/lib/agents/nutritionEstimationAgent';

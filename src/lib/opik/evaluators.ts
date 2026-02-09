@@ -1,5 +1,3 @@
-// src/lib/opik/evaluators.ts
-
 import OpenAI from 'openai';
 import { trackOpenAI } from 'opik-openai';
 import { EvaluationMetrics } from '../types';

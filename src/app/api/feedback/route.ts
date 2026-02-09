@@ -1,5 +1,3 @@
-// src/app/api/feedback/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import { logFeedback } from '@/lib/opik/client';
 import { UserFeedback } from '@/lib/types';

@@ -1,5 +1,3 @@
-// src/lib/opik/client.ts
-
 import { Opik } from 'opik';
 
 // Initialize Opik client

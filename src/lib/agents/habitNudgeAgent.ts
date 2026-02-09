@@ -1,5 +1,3 @@
-// src/lib/agents/habitNudgeAgent.ts
-
 import OpenAI from 'openai';
 import { trackOpenAI } from 'opik-openai';
 import { FoodItem, NutritionEstimate, HabitNudge } from '../types';

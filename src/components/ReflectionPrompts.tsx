@@ -1,4 +1,3 @@
-// src/components/ReflectionPrompts.tsx
 'use client';
 
 import { ReflectionPrompt, HabitNudge } from '@/lib/types';
